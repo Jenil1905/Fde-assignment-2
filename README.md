@@ -32,23 +32,12 @@ This is the anchor KPI; all 5 metrics below are linked to it.
 
 | Source | What it provides | Retrieval mode | Owner (in real life) |
 |---|---|---|---|
-| `trips_march2024_sample.csv` | Trip-level events: pickup/dropoff time, location IDs, distance, fare, passengers | File (CSV) | TLC trip records |
-| `taxi_zone_lookup.csv` | Reference table mapping LocationID → Borough/Zone | File (CSV) | TLC zone lookup |
+| `yellow_tripdata_2026-07.parquet` (or `trips_march2024_sample.csv`) | Trip-level events: pickup/dropoff time, location IDs, distance, fare, passengers (3.53M records) | File (Parquet/CSV) | TLC trip records |
+| `taxi_zone_lookup.csv` | Reference table mapping 265 LocationIDs → Borough/Zone | File (CSV) | TLC zone lookup |
 | Weather (Open-Meteo API, cached fallback included) | Daily precipitation + temperature for NYC | API (with cached JSON fallback) | Open-Meteo (external) |
 
-**Note on data used here:** This sandbox environment cannot reach external
-sites (nyc.gov, open-meteo.com), so `src/generate_sample_data.py` generates a
-**synthetic sample** that copies the real TLC schema exactly (same column
-names/types) and a cached weather API response shaped like a real Open-Meteo
-response. The pipeline code itself (`ingest.py`) contains the real,
-working API call — it just falls back to the cached file if the live call
-fails, which is what happened when I ran it here (see `logs/pipeline.log`).
+**Note on data used here:** The pipeline is configured to automatically ingest the official NYC TLC Parquet dataset (`data/raw/yellow_tripdata_2026-07.parquet` - 3.53 million trips) and the complete 265-zone TLC reference table (`data/raw/taxi_zone_lookup.csv`). Weather data is fetched live from Open-Meteo (with an updated cached JSON fallback in `data/raw/weather_api_response_cached.json`). If Parquet data is absent, `src/ingest.py` dynamically falls back to the sample dataset.
 
-**To use real data instead:** download the real files and drop them into
-`data/raw/` with the same filenames used in `src/ingest.py`:
-- Trip data: https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
-- Zone lookup: https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv
-- Weather API: https://open-meteo.com/en/docs (no API key required)
 
 ## Workflow / data model
 

@@ -25,12 +25,34 @@ BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
 RAW_DIR = os.path.join(BASE_DIR, "data", "raw")
 
 
-def load_trip_data(filename="trips_march2024_sample.csv"):
-    """Retrieval mode 1: file-based (CSV)."""
+def load_trip_data(filename=None):
+    """Retrieval mode 1: file-based (CSV or Parquet).
+
+    Dynamically detects whether real TLC Parquet data or synthetic sample CSV
+    is available in data/raw/.
+    """
+    if filename is None:
+        parquet_path = os.path.join(RAW_DIR, "yellow_tripdata_2026-07.parquet")
+        csv_path = os.path.join(RAW_DIR, "trips_march2024_sample.csv")
+        if os.path.exists(parquet_path):
+            filename = "yellow_tripdata_2026-07.parquet"
+        elif os.path.exists(csv_path):
+            filename = "trips_march2024_sample.csv"
+        else:
+            raise FileNotFoundError("No trip dataset found in data/raw/")
+
     path = os.path.join(RAW_DIR, filename)
     if not os.path.exists(path):
         raise FileNotFoundError(f"Trip data file not found: {path}")
-    df = pd.read_csv(path)
+
+    if filename.endswith(".parquet"):
+        df = pd.read_parquet(path)
+    else:
+        df = pd.read_csv(path)
+
+    if "trip_id" not in df.columns:
+        df["trip_id"] = range(1, len(df) + 1)
+
     logger.info(f"Loaded {len(df)} trip records from {filename}")
     return df
 
@@ -46,7 +68,7 @@ def load_zone_lookup(filename="taxi_zone_lookup.csv"):
     return df
 
 
-def fetch_weather_data(start_date="2024-03-01", end_date="2024-03-31",
+def fetch_weather_data(start_date="2026-07-01", end_date="2026-07-31",
                         latitude=40.71, longitude=-74.01):
     """Retrieval mode 2: API.
 
